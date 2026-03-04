@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Deteksi Penyakit Worldwide</title>
+    <style>
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .symptoms-section {
+            margin-bottom: 25px;
+        }
+
+        .symptoms-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+
+        .checkbox-item:hover {
+            background: #e8e9ea;
+        }
+
+        .checkbox-item input {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            flex: 1;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #result {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .result-header {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .result-header h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .selected-symptoms {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .disease-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fff;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .disease-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .solution {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            color: #2e7d32;
+        }
+
+        .solution strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .source {
+            font-size: 12px;
+            color: #888;
+            font-style: italic;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .disclaimer {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8d7da;
+            border-radius: 10px;
+            font-size: 12px;
+            color: #721c24;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🏥 Deteksi Penyakit</h1>
+        <p class="subtitle">Pilih gejala yang Anda rasakan, kami akan membantu mendeteksi kemungkinan penyakitnya.</p>
+
+        <div class="symptoms-section">
+            <div class="symptoms-title">📋 Centang Gejala yang Anda Rasakan:</div>
+            <div class="checkbox-grid" id="symptomsList">
+                <!-- Checkbox akan di-generate oleh JavaScript -->
+            </div>
+        </div>
+
+        <button onclick="detectDisease()">🔍 Deteksi Sekarang</button>
+
+        <div id="result"></div>
+
+        <div class="disclaimer">
+            ⚠️ <strong>Peringatan:</strong> Aplikasi ini hanya untuk tujuan edukasi dan simulasi. 
+            Hasil diagnosis BUKAN diagnosis medis resmi. 
+            Jika Anda merasa sakit parah, SEGERA KONSULTASIKAN dengan dokter.
+        </div>
+    </div>
+
+    <script>
+        // --- DATABASE PENYAKIT ---
+        const database = {
+            "Flu (Influenza)": {
+                gejala: ["Demam", "Batuk", "Pusing", "Nyeri Tubuh", "Meriang", "Kelelahan"],
+                solusi: "Istirahat yang cukup, minum banyak air hangat, konsumsi obat pereda gejala seperti Parasetamol. Hindari kontak dengan orang lain.",
+                sumber: "WHO (World Health Organization)"
+            },
+            "Pilek Biasa (Common Cold)": {
+                gejala: ["Hidung tersumbat", "Bersin", "Sakit Tenggorokan", "Meriang", "Batuk"],
+                solusi: "Minum air hangat dengan lemon, gunakan humidifier, istirahat yang cukup, konsumsi vitamin C.",
+                sumber: "Mayo Clinic"
+            },
+            "Demam Berdarah Dengue (DBD)": {
+                gejala: ["Demam tinggi", "Sakit Kepala", "Mual", "Nyeri otot", "Ruam kulit", "Muntah"],
+                solusi: "MINUM BANYAK CAIRAN (Oralit), konsumsi PARASETAMOL (JANGAN Ibuprofen/Aspirin), segera lakukan tes NS1 di laboratorium.",
+                sumber: "CDC (Centers for Disease Control and Prevention)"
+            },
+            "Migrain (Sakit Kepala Sebelah)": {
+                gejala: ["Sakit kepala parah", "Mual", "Sensitif terhadap cahaya", "Pusing"],
+                solusi: "Minum obat pereda sakit kepala (Ibuprofen/Parasetamol), istirahat di ruangan gelap dan tenang, kompres dahi.",
+                sumber: "NHS (National Health Service UK)"
+            },
+            "Makanan Mengandung Racun (Food Poisoning)": {
+                gejala: ["Mual", "Muntah", "Diare", "Sakit Perut", "Demam"],
+                solusi: "Minum oralit untuk mencegah dehidrasi, makan makanan hambar (Nasi, Roti, Pisang), segera ke dokter jika parah.",
+                sumber: "FDA (Food and Drug Administration)"
+            },
+            "Tipes (Demam Tifoid)": {
+                gejala: ["Demam tinggi", "Sakit Perut", "Mual", "Sembelit atau Diare", "Kelelahan"],
+                solusi: "Istirahat total, minum cairan, konsumsi antibiotik sesuai resep dokter, makanan lunak.",
+                sumber: "WHO - Typhoid"
+            },
+            "Asma (Kumat)": {
+                gejala: ["Sesak napas", "Batuk", "Meriang", "Nyeri dada"],
+                solusi: "Gunakan inhaler (ventolin) sesuai dosis, hindari pemicu alergen, duduk dan bernapas perlahan.",
+                sumber: "American Lung Association"
+            },
+            "Conjungtivitis (Mata Merah)": {
+                gejala: ["Mata merah", "Gatal pada mata", "Produksi air mata berlebihan", "Peki"],
+                solusi: "Kompres mata dengan air hangat, jangan gosok mata, hindari penggunaan lensa kontak, kebersihan tangan.",
+                sumber: "American Academy of Ophthalmology"
+            }
+        };
+
+        // --- INISIALISASI CHECKBOX ---
+        function initSymptoms() {
+            const symptomsList = document.getElementById('symptomsList');
+            const allSymptoms = new Set();
+
+            // Ambil semua gejala unik
+            for (let disease in database) {
+                database[disease].gejala.forEach(s => allSymptoms.add(s));
+            }
+
+            // Urutkan alphabetically
+            const sortedSymptoms = Array.from(allSymptoms).sort();
+
+            // Buat checkbox
+            sortedSymptoms.forEach(symptom => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                div.innerHTML = `
+                    <input type="checkbox" id="${symptom}" value="${symptom}">
+                    <label for="${symptom}">${symptom}</label>
+                `;
+                symptomsList.appendChild(div);
+            });
+        }
+
+        // --- LOGIKA DETEKSI ---
+        function detectDisease() {
+            // 1. Ambil gejala yang dicentang
+            const checkboxes = document.querySelectorAll('#symptomsList input[type="checkbox"]:checked');
+            const selectedSymptoms = Array.from(checkboxes).map(cb => cb.value);
+
+            // Validasi
+            if (selectedSymptoms.length === 0) {
+                alert("⚠️ Silakan pilih setidaknya satu gejala!");
+                return;
+            }
+
+            // 2. Proses pencocokan
+            let results = [];
+            
+            for (let disease in database) {
+                const diseaseData = database[disease];
+                const matchCount = diseaseData.gejala.filter(s => selectedSymptoms.includes(s)).length;
+                
+                if (matchCount > 0) {
+                    results.push({
+                        name: disease,
+                        matchCount: matchCount,
+                        totalSymptoms: diseaseData.gejala.length,
+                        solusi: diseaseData.solusi,
+                        sumber: diseaseData.sumber
+                    });
+                }
+            }
+
+            // Urutkan: yang paling banyak kecocokan di atas
+            results.sort((a, b) => b.matchCount - a.matchCount);
+
+            // 3. Tampilkan hasil
+            displayResults(results, selectedSymptoms);
+        }
+
+        function displayResults(results, selectedSymptoms) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+
+            let html = `
+                <div class="result-header">
+                    <h3>📊 Hasil Deteksi</h3>
+                    <div class="selected-symptoms">
+                        <strong>Gejala dipilih:</strong> ${selectedSymptoms.join(', ')}
+                    </div>
+                </div>
+            `;
+
+            if (results.length === 0) {
+                html += `
+                    <div class="warning">
+                        Tidak ada penyakit dalam database yang cocok dengan gejala tersebut.
+                    </div>
+                `;
+            } else {
+                // Tampilkan maksimal 3 hasil teratas
+                const topResults = results.slice(0, 3);
+                
+                topResults.forEach((res, index) => {
+                    const accuracy = Math.round((res.matchCount / res.totalSymptoms) * 100);
+                    
+                    html += `
+                        <div class="disease-card" style="border-left-color: ${getColor(index)}">
+                            <div class="disease-name">
+                                ${index + 1}. ${res.name}
+                            </div>
+                            <div class="solution">
+                                <strong>💊 Solusi:</strong>
+                                ${res.solusi}
+                            </div>
+                            <div class="source">
+                                📚 Sumber: ${res.sumber}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            resultDiv.innerHTML = html;
+            
+            // Scroll ke hasil
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getColor(index) {
+            const colors = ['#667eea', '#f59e0b', '#10b981'];
+            return colors[index] || '#667eea';
+        }
+
+        // Jalankan inisialisasi saat halaman load
+        window.onload = initSymptoms;
+    </script>
+
+</body>
+</html>
