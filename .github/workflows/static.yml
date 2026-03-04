@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediCheck - Sistem Pendeteksi Penyakit</title>
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --bg-color: #f0f9ff;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        /* Header Section */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 { margin: 0; font-size: 2rem; }
+        header p { margin: 5px 0 0; opacity: 0.9; }
+
+        /* Warning Banner */
+        .disclaimer {
+            background-color: #fef2f2;
+            border-bottom: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 30px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--text-main);
+            border-left: 5px solid var(--primary);
+            padding-left: 10px;
+        }
+
+        /* Search Input */
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        /* Symptoms Grid */
+        .symptoms-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .symptom-tag {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            user-select: none;
+        }
+
+        .symptom-tag:hover {
+            border-color: var(--primary);
+            background: #f0f9ff;
+        }
+
+        .symptom-tag.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Analyze Button */
+        .btn-analyze {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-analyze:hover { background-color: var(--primary-dark); }
+        .btn-analyze:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
+        /* Results Section */
+        #results-area {
+            margin-top: 30px;
+            display: none; /* Hidden initially */
+        }
+
+        .result-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            border-left: 5px solid var(--primary);
+        }
+
+        .result-card.high-risk {
+            border-left-color: var(--danger);
+            background-color: #fff1f1;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .disease-name { font-size: 1.4rem; font-weight: bold; }
+        
+        .match-percent {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .tag-group { margin-bottom: 15px; }
+        .tag-label { font-weight: 600; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; display: block; }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+
+        .info-box {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .info-box h4 { margin: 0 0 10px; color: var(--primary-dark); font-size: 1rem; }
+        .info-box ul { margin: 0; padding-left: 20px; }
+        .info-box li { margin-bottom: 5px; font-size: 0.95rem; }
+
+        .source-link {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .no-result {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏥 MediCheck System</h1>
+        <p>Sistem Pendeteksi Penyakit Berbasis Gejala</p>
+    </header>
+
+    <div class="disclaimer">
+        ⚠️ PERINGATAN: Alat ini untuk edukasi & simulasi. Hasil BUKAN diagnosa medis resmi. Selalu konsultasi ke dokter.
+    </div>
+
+    <div class="main-content">
+        <!-- Input Section -->
+        <div class="section-title">Masukkan Gejala yang Dirasakan</div>
+        <p style="font-size:0.9rem; color:var(--text-muted);">Pilih semua gejala yang Anda rasakan saat ini. Ketik untuk mencari gejala spesifik.</p>
+        
+        <div class="search-box">
+            <input type="text" id="searchSymptom" placeholder="Ketik untuk mencari gejala (cth: demam, pusing, mual)...">
+        </div>
+
+        <div class="symptoms-container" id="symptomList">
+            <!-- Gejala akan muncul di sini via JS -->
+        </div>
+
+        <button class="btn-analyze" onclick="analyzeDisease()">ANALISA SEKARANG</button>
+
+        <!-- Results Section -->
+        <div id="results-area">
+            <div class="section-title" style="margin-top:20px;">Hasil Analisa Kemungkinan Penyakit</div>
+            <div id="results-content"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =============================================================
+    // DATABASE PENYAKIT (Dapat ditambah sebanyak-banyaknya)
+    // Untuk mencakup 'segala penyakit', tambahkan data ICD-10
+    // =============================================================
+    const diseaseData = [
+        {
+            name: "Influenza (Flu)",
+            symptoms: ["demam", "batuk", "pilek", "sakit tenggorokan", "sakit kepala", "nyeri otot", "kelelahan"],
+            treatment: ["Istirahat cukup", "Banyak minum air putih", "Obat penurun demam (Paracetamol)", "Obat batuk pilek di apotek"],
+            source: "WHO - Influenza Fact Sheet",
+            risk: "low"
+        },
+        {
+            name: "Demam Berdarah Dengue (DBD)",
+            symptoms: ["demam tinggi mendadak", "sakit kepala parah", "nyeri di belakang mata", "nyeri sendi", "nyeri otot", "mual", "muntah", "bintik merah di kulit"],
+            treatment: ["SEGERA KE RUMAH SAKIT", "Banyak minum cairan elektrolit (oralit)", "Kompres hangat", "Hindari obat aspirin/ibuprofen"],
+            source: "Kementerian Kesehatan RI - DBD",
+            risk: "high"
+        },
+        {
+            name: "Maag (Gastritis)",
+            symptoms: ["nyeri ulu hati", "perut kembung", "mual", "muntah", "mulut pahit", "bersendawa", "tidak nafsu makan"],
+            treatment: ["Makan teratur", "Hindari makanan pedas/asam", "Obat maag (Antasida)", "Kurangi stres"],
+            source: "Mayo Clinic - Gastritis",
+            risk: "low"
+        },
+        {
+            name: "Tifus (Tifoid)",
+            symptoms: ["demam tinggi", "sakit kepala", "sakit perut", "diare atau sembelit", "mual", "muntah", "nafsu makan hilang", "bintik merah pada perut"],
+            treatment: ["Konsultasi dokter untuk tes Widal", "Minum antibiotik resep dokter", "Makan makanan lunak", "Istirahat total"],
+            source: "CDC - Typhoid Fever",
+            risk: "medium"
+        },
+        {
+            name: "Konjungtivitis (Mata Merah)",
+            symptoms: ["mata merah", "gatal di mata", "keluar kotoran mata (belekan)", "mata berair", "kelopak mata bengkak", "sensitif terhadap cahaya"],
+            treatment: ["Obat tetes mata antibiotik", "Kompres hangat", "Jangan mengucek mata", "Menjaga kebersihan tangan"],
+            source: "WebMD - Pinkeye",
+            risk: "low"
+        },
+        {
+            name: "Hipertensi (Darah Tinggi)",
+            symptoms: ["sakit kepala hebat", "pusing", "penglihatan kabur", "jantung berdebar", "sesak napas", "mudah marah"],
+            treatment: ["Kurangi garam makanan", "Olahraga teratur", "Minum obat hipertensi rutin", "Hindari rokok & alkohol"],
+            source: "American Heart Association",
+            risk: "high"
+        },
+        {
+            name: "Asma Bronkial",
+            symptoms: ["sesak napas", "mengi (bunyi napas)", "batuk berdahak", "dada terasa berat", "sulit tidur karena sesak"],
+            treatment: ["Gunakan inhaler (salbutamol)", "Hindari alergen (debu, bulu hewan)", "Bernapas dalam-dalam", "Posisi duduk tegak saat serangan"],
+            source: "GINA - Global Initiative for Asthma",
+            risk: "medium"
+        },
+        {
+            name: "Sinusitis",
+            symptoms: ["hidung tersumbat", "keluar lendir hidung", "nyeri wajah", "sakit kepala", "demam ringan", "kehilangan indra penciuman", "batuk"],
+            treatment: ["Terapi uap (inhalasi)", "Obat semprot hidung", "Minum air putih banyak", "Kompres hangat di wajah"],
+            source: "Healthline - Sinusitis",
+            risk: "low"
+        },
+        {
+            name: "Infeksi Saluran Kemih (ISK)",
+            symptoms: ["nyeri saat buang air kecil", "sering buang air kecil", "nyeri perut bagian bawah", "urine keruh atau berdarah", "demam"],
+            treatment: ["Banyak minum air putih", "Antibiotik (resep dokter)", "Hindari kafein", "Kompres perut"],
+            source: "NIH - Urinary Tract Infection",
+            risk: "medium"
+        },
+        {
+            name: "Gejala Serangan Jantung",
+            symptoms: ["nyeri dada hebat", "nyeri menyebar ke lengan/kiri", "sesak napas", "keringat dingin", "mual", "pusing"],
+            treatment: ["PANGGIL AMBULANS SEGERA", "Jangan panik", "Kunyah aspirin jika tidak alergi", "Lakukan CPR jika pasien pingsan"],
+            source: "American Heart Association - Warning Signs",
+            risk: "critical"
+        }
+    ];
+
+    // Variabel Global untuk menyimpan gejala unik
+    let allSymptoms = new Set();
+    
+    // 1. Ekstrak semua gejala unik dari database
+    diseaseData.forEach(disease => {
+        disease.symptoms.forEach(symptom => allSymptoms.add(symptom));
+    });
+    // Ubah ke array dan urutkan
+    const sortedSymptoms = Array.from(allSymptoms).sort();
+
+    // 2. Tampilkan Gejala di UI
+    const symptomContainer = document.getElementById('symptomList');
+    sortedSymptoms.forEach(symptom => {
+        const div = document.createElement('div');
+        div.className = 'symptom-tag';
+        div.textContent = symptom;
+        div.onclick = function() {
+            this.classList.toggle('active');
+        };
+        symptomContainer.appendChild(div);
+    });
+
+    // 3. Fungsi Pencarian Gejala
+    document.getElementById('searchSymptom').addEventListener('keyup', function() {
+        const filter = this.value.toLowerCase();
+        const tags = symptomContainer.getElementsByTagName('div');
+        
+        for (let i = 0; i < tags.length; i++) {
+            const txtValue = tags[i].textContent || tags[i].innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                tags[i].style.display = "";
+            } else {
+                tags[i].style.display = "none";
+            }
+        }
+    });
+
+    // 4. Logika Analisa Penyakit
+    function analyzeDisease() {
+        // Ambil gejala yang dipilih (class active)
+        const selectedTags = document.querySelectorAll('.symptom-tag.active');
+        const userSymptoms = Array.from(selectedTags).map(tag => tag.textContent.toLowerCase());
+        
+        const resultsContent = document.getElementById('results-content');
+        const resultsArea = document.getElementById('results-area');
+        
+        if (userSymptoms.length === 0) {
+            alert("Silakan pilih minimal satu gejala!");
+            return;
+        }
+
+        let possibleDiseases = [];
+
+        // Loop setiap penyakit di database
+        diseaseData.forEach(disease => {
+            // Cek kecocokan gejala
+            let matchCount = 0;
+            disease.symptoms.forEach(s => {
+                if(userSymptoms.includes(s)) {
+                    matchCount++;
+                }
+            });
+
+            // Jika ada kecocokan minimal 1 gejala
+            if (matchCount > 0) {
+                // Hitung persentase kecocokan (gejala user vs gejala penyakit)
+                // Rumus: (Jumlah gejala cocok / Total gejala penyakit) * 100
+                let percentage = (matchCount / disease.symptoms.length) * 100;
+                
+                // Kategorikan berdasarkan jumlah gejala user yang cocok
+                // Semakin banyak gejala user yang cocok, semakin tinggi prioritas
+                possibleDiseases.push({
+                    name: disease.name,
+                    match: matchCount,
+                    percentage: percentage.toFixed(0),
+                    treatment: disease.treatment,
+                    source: disease.source,
+                    risk: disease.risk
+                });
+            }
+        });
+
+        // Urutkan hasil berdasarkan jumlah kecocokan terbanyak
+        possibleDiseases.sort((a, b) => b.match - a.match);
+
+        // Tampilkan Hasil
+        resultsArea.style.display = 'block';
+        
+        if (possibleDiseases.length === 0) {
+            resultsContent.innerHTML = "<div class='no-result'>Tidak ditemukan penyakit yang cocok dengan kombinasi gejala tersebut dalam database kami.</div>";
+        } else {
+            let htmlOutput = '';
+            
+            // Batasi tampilan 5 hasil teratas agar tidak membingungkan
+            possibleDiseases.slice(0, 5).forEach(res => {
+                let riskClass = '';
+                let riskLabel = '';
+                
+                if(res.risk === 'critical' || res.risk === 'high') {
+                    riskClass = 'high-risk';
+                    riskLabel = '⚠️ Risiko Tinggi';
+                }
+
+                let treatmentList = res.treatment.map(t => `<li>${t}</li>`).join('');
+
+                htmlOutput += `
+                    <div class="result-card ${riskClass}">
+                        <div class="result-header">
+                            <div class="disease-name">${res.name} ${riskLabel ? `<span style="font-size:0.8rem; color:red;">${riskLabel}</span>` : ''}</div>
+                            <span class="match-percent">Kecocokan: ${res.percentage}%</span>
+                        </div>
+                        
+                        <div class="tag-group">
+                            <span class="tag-label">${res.match} gejala cocok dengan pilihan Anda</span>
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-box">
+                                <h4>Langkah Penyembuhan & Obat</h4>
+                                <ul>${treatmentList}</ul>
+                            </div>
+                            <div class="info-box">
+                                <h4>Informasi Penting</h4>
+                                <p>Jika persentase tinggi dan gejala parah, segera pergi ke fasilitas kesehatan terdekat.</p>
+                                <div class="source-link">Sumber: ${res.source}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsContent.innerHTML = htmlOutput;
+            
+            // Scroll ke hasil
+            resultsArea.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediCheck - Sistem Pendeteksi Penyakit</title>
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --bg-color: #f0f9ff;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        /* Header Section */
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 { margin: 0; font-size: 2rem; }
+        header p { margin: 5px 0 0; opacity: 0.9; }
+
+        /* Warning Banner */
+        .disclaimer {
+            background-color: #fef2f2;
+            border-bottom: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 30px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--text-main);
+            border-left: 5px solid var(--primary);
+            padding-left: 10px;
+        }
+
+        /* Search Input */
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        /* Symptoms Grid */
+        .symptoms-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .symptom-tag {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            user-select: none;
+        }
+
+        .symptom-tag:hover {
+            border-color: var(--primary);
+            background: #f0f9ff;
+        }
+
+        .symptom-tag.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Analyze Button */
+        .btn-analyze {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-analyze:hover { background-color: var(--primary-dark); }
+        .btn-analyze:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
+        /* Results Section */
+        #results-area {
+            margin-top: 30px;
+            display: none; /* Hidden initially */
+        }
+
+        .result-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            border-left: 5px solid var(--primary);
+        }
+
+        .result-card.high-risk {
+            border-left-color: var(--danger);
+            background-color: #fff1f1;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .disease-name { font-size: 1.4rem; font-weight: bold; }
+        
+        .match-percent {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .tag-group { margin-bottom: 15px; }
+        .tag-label { font-weight: 600; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 5px; display: block; }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+
+        .info-box {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .info-box h4 { margin: 0 0 10px; color: var(--primary-dark); font-size: 1rem; }
+        .info-box ul { margin: 0; padding-left: 20px; }
+        .info-box li { margin-bottom: 5px; font-size: 0.95rem; }
+
+        .source-link {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .no-result {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏥 MediCheck System</h1>
+        <p>Sistem Pendeteksi Penyakit Berbasis Gejala</p>
+    </header>
+
+    <div class="disclaimer">
+        ⚠️ PERINGATAN: Alat ini untuk edukasi & simulasi. Hasil BUKAN diagnosa medis resmi. Selalu konsultasi ke dokter.
+    </div>
+
+    <div class="main-content">
+        <!-- Input Section -->
+        <div class="section-title">Masukkan Gejala yang Dirasakan</div>
+        <p style="font-size:0.9rem; color:var(--text-muted);">Pilih semua gejala yang Anda rasakan saat ini. Ketik untuk mencari gejala spesifik.</p>
+        
+        <div class="search-box">
+            <input type="text" id="searchSymptom" placeholder="Ketik untuk mencari gejala (cth: demam, pusing, mual)...">
+        </div>
+
+        <div class="symptoms-container" id="symptomList">
+            <!-- Gejala akan muncul di sini via JS -->
+        </div>
+
+        <button class="btn-analyze" onclick="analyzeDisease()">ANALISA SEKARANG</button>
+
+        <!-- Results Section -->
+        <div id="results-area">
+            <div class="section-title" style="margin-top:20px;">Hasil Analisa Kemungkinan Penyakit</div>
+            <div id="results-content"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // =============================================================
+    // DATABASE PENYAKIT (Dapat ditambah sebanyak-banyaknya)
+    // Untuk mencakup 'segala penyakit', tambahkan data ICD-10
+    // =============================================================
+    const diseaseData = [
+        {
+            name: "Influenza (Flu)",
+            symptoms: ["demam", "batuk", "pilek", "sakit tenggorokan", "sakit kepala", "nyeri otot", "kelelahan"],
+            treatment: ["Istirahat cukup", "Banyak minum air putih", "Obat penurun demam (Paracetamol)", "Obat batuk pilek di apotek"],
+            source: "WHO - Influenza Fact Sheet",
+            risk: "low"
+        },
+        {
+            name: "Demam Berdarah Dengue (DBD)",
+            symptoms: ["demam tinggi mendadak", "sakit kepala parah", "nyeri di belakang mata", "nyeri sendi", "nyeri otot", "mual", "muntah", "bintik merah di kulit"],
+            treatment: ["SEGERA KE RUMAH SAKIT", "Banyak minum cairan elektrolit (oralit)", "Kompres hangat", "Hindari obat aspirin/ibuprofen"],
+            source: "Kementerian Kesehatan RI - DBD",
+            risk: "high"
+        },
+        {
+            name: "Maag (Gastritis)",
+            symptoms: ["nyeri ulu hati", "perut kembung", "mual", "muntah", "mulut pahit", "bersendawa", "tidak nafsu makan"],
+            treatment: ["Makan teratur", "Hindari makanan pedas/asam", "Obat maag (Antasida)", "Kurangi stres"],
+            source: "Mayo Clinic - Gastritis",
+            risk: "low"
+        },
+        {
+            name: "Tifus (Tifoid)",
+            symptoms: ["demam tinggi", "sakit kepala", "sakit perut", "diare atau sembelit", "mual", "muntah", "nafsu makan hilang", "bintik merah pada perut"],
+            treatment: ["Konsultasi dokter untuk tes Widal", "Minum antibiotik resep dokter", "Makan makanan lunak", "Istirahat total"],
+            source: "CDC - Typhoid Fever",
+            risk: "medium"
+        },
+        {
+            name: "Konjungtivitis (Mata Merah)",
+            symptoms: ["mata merah", "gatal di mata", "keluar kotoran mata (belekan)", "mata berair", "kelopak mata bengkak", "sensitif terhadap cahaya"],
+            treatment: ["Obat tetes mata antibiotik", "Kompres hangat", "Jangan mengucek mata", "Menjaga kebersihan tangan"],
+            source: "WebMD - Pinkeye",
+            risk: "low"
+        },
+        {
+            name: "Hipertensi (Darah Tinggi)",
+            symptoms: ["sakit kepala hebat", "pusing", "penglihatan kabur", "jantung berdebar", "sesak napas", "mudah marah"],
+            treatment: ["Kurangi garam makanan", "Olahraga teratur", "Minum obat hipertensi rutin", "Hindari rokok & alkohol"],
+            source: "American Heart Association",
+            risk: "high"
+        },
+        {
+            name: "Asma Bronkial",
+            symptoms: ["sesak napas", "mengi (bunyi napas)", "batuk berdahak", "dada terasa berat", "sulit tidur karena sesak"],
+            treatment: ["Gunakan inhaler (salbutamol)", "Hindari alergen (debu, bulu hewan)", "Bernapas dalam-dalam", "Posisi duduk tegak saat serangan"],
+            source: "GINA - Global Initiative for Asthma",
+            risk: "medium"
+        },
+        {
+            name: "Sinusitis",
+            symptoms: ["hidung tersumbat", "keluar lendir hidung", "nyeri wajah", "sakit kepala", "demam ringan", "kehilangan indra penciuman", "batuk"],
+            treatment: ["Terapi uap (inhalasi)", "Obat semprot hidung", "Minum air putih banyak", "Kompres hangat di wajah"],
+            source: "Healthline - Sinusitis",
+            risk: "low"
+        },
+        {
+            name: "Infeksi Saluran Kemih (ISK)",
+            symptoms: ["nyeri saat buang air kecil", "sering buang air kecil", "nyeri perut bagian bawah", "urine keruh atau berdarah", "demam"],
+            treatment: ["Banyak minum air putih", "Antibiotik (resep dokter)", "Hindari kafein", "Kompres perut"],
+            source: "NIH - Urinary Tract Infection",
+            risk: "medium"
+        },
+        {
+            name: "Gejala Serangan Jantung",
+            symptoms: ["nyeri dada hebat", "nyeri menyebar ke lengan/kiri", "sesak napas", "keringat dingin", "mual", "pusing"],
+            treatment: ["PANGGIL AMBULANS SEGERA", "Jangan panik", "Kunyah aspirin jika tidak alergi", "Lakukan CPR jika pasien pingsan"],
+            source: "American Heart Association - Warning Signs",
+            risk: "critical"
+        }
+    ];
+
+    // Variabel Global untuk menyimpan gejala unik
+    let allSymptoms = new Set();
+    
+    // 1. Ekstrak semua gejala unik dari database
+    diseaseData.forEach(disease => {
+        disease.symptoms.forEach(symptom => allSymptoms.add(symptom));
+    });
+    // Ubah ke array dan urutkan
+    const sortedSymptoms = Array.from(allSymptoms).sort();
+
+    // 2. Tampilkan Gejala di UI
+    const symptomContainer = document.getElementById('symptomList');
+    sortedSymptoms.forEach(symptom => {
+        const div = document.createElement('div');
+        div.className = 'symptom-tag';
+        div.textContent = symptom;
+        div.onclick = function() {
+            this.classList.toggle('active');
+        };
+        symptomContainer.appendChild(div);
+    });
+
+    // 3. Fungsi Pencarian Gejala
+    document.getElementById('searchSymptom').addEventListener('keyup', function() {
+        const filter = this.value.toLowerCase();
+        const tags = symptomContainer.getElementsByTagName('div');
+        
+        for (let i = 0; i < tags.length; i++) {
+            const txtValue = tags[i].textContent || tags[i].innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                tags[i].style.display = "";
+            } else {
+                tags[i].style.display = "none";
+            }
+        }
+    });
+
+    // 4. Logika Analisa Penyakit
+    function analyzeDisease() {
+        // Ambil gejala yang dipilih (class active)
+        const selectedTags = document.querySelectorAll('.symptom-tag.active');
+        const userSymptoms = Array.from(selectedTags).map(tag => tag.textContent.toLowerCase());
+        
+        const resultsContent = document.getElementById('results-content');
+        const resultsArea = document.getElementById('results-area');
+        
+        if (userSymptoms.length === 0) {
+            alert("Silakan pilih minimal satu gejala!");
+            return;
+        }
+
+        let possibleDiseases = [];
+
+        // Loop setiap penyakit di database
+        diseaseData.forEach(disease => {
+            // Cek kecocokan gejala
+            let matchCount = 0;
+            disease.symptoms.forEach(s => {
+                if(userSymptoms.includes(s)) {
+                    matchCount++;
+                }
+            });
+
+            // Jika ada kecocokan minimal 1 gejala
+            if (matchCount > 0) {
+                // Hitung persentase kecocokan (gejala user vs gejala penyakit)
+                // Rumus: (Jumlah gejala cocok / Total gejala penyakit) * 100
+                let percentage = (matchCount / disease.symptoms.length) * 100;
+                
+                // Kategorikan berdasarkan jumlah gejala user yang cocok
+                // Semakin banyak gejala user yang cocok, semakin tinggi prioritas
+                possibleDiseases.push({
+                    name: disease.name,
+                    match: matchCount,
+                    percentage: percentage.toFixed(0),
+                    treatment: disease.treatment,
+                    source: disease.source,
+                    risk: disease.risk
+                });
+            }
+        });
+
+        // Urutkan hasil berdasarkan jumlah kecocokan terbanyak
+        possibleDiseases.sort((a, b) => b.match - a.match);
+
+        // Tampilkan Hasil
+        resultsArea.style.display = 'block';
+        
+        if (possibleDiseases.length === 0) {
+            resultsContent.innerHTML = "<div class='no-result'>Tidak ditemukan penyakit yang cocok dengan kombinasi gejala tersebut dalam database kami.</div>";
+        } else {
+            let htmlOutput = '';
+            
+            // Batasi tampilan 5 hasil teratas agar tidak membingungkan
+            possibleDiseases.slice(0, 5).forEach(res => {
+                let riskClass = '';
+                let riskLabel = '';
+                
+                if(res.risk === 'critical' || res.risk === 'high') {
+                    riskClass = 'high-risk';
+                    riskLabel = '⚠️ Risiko Tinggi';
+                }
+
+                let treatmentList = res.treatment.map(t => `<li>${t}</li>`).join('');
+
+                htmlOutput += `
+                    <div class="result-card ${riskClass}">
+                        <div class="result-header">
+                            <div class="disease-name">${res.name} ${riskLabel ? `<span style="font-size:0.8rem; color:red;">${riskLabel}</span>` : ''}</div>
+                            <span class="match-percent">Kecocokan: ${res.percentage}%</span>
+                        </div>
+                        
+                        <div class="tag-group">
+                            <span class="tag-label">${res.match} gejala cocok dengan pilihan Anda</span>
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-box">
+                                <h4>Langkah Penyembuhan & Obat</h4>
+                                <ul>${treatmentList}</ul>
+                            </div>
+                            <div class="info-box">
+                                <h4>Informasi Penting</h4>
+                                <p>Jika persentase tinggi dan gejala parah, segera pergi ke fasilitas kesehatan terdekat.</p>
+                                <div class="source-link">Sumber: ${res.source}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsContent.innerHTML = htmlOutput;
+            
+            // Scroll ke hasil
+            resultsArea.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+</script>
+
+</body>
+</html>
